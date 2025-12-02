@@ -409,3 +409,4 @@ def get_period_money(db: Session, start_date: datetime, end_date: datetime) -> D
     except Exception as e:
         raise RuntimeError(f"Ошибка при формировании отчёта за период: {str(e)}")
 
+
