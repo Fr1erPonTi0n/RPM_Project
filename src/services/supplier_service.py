@@ -2,19 +2,10 @@ from sqlalchemy.orm import Session  # Импортируем Session — объ�
 from sqlalchemy import func, and_, or_  # Импортируем функции: func (агрегация), and_, or_ (логические операторы для фильтров)
 from typing import List, Optional, Dict, Any  # Импортируем типы данных для аннотаций
 from models.supplier import Supplier, SupplyType, supplier_supply_type  # Импортируем ORM-модели: поставщик, тип поставки и таблицу связей
+from utils.validators import validate_positive_int, validate_string
 
 
-# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ВАЛИДАЦИИ
-
-def validate_positive_int(value: int, name: str) -> None:  # Проверка положительного целого числа
-    if not isinstance(value, int) or value <= 0:  # Если значение не int или меньше/равно 0
-        raise ValueError(f"{name} должен быть положительным целым числом, получено: {value}")  # Ошибка
-
-
-def validate_string(value: str, name: str, min_len: int = 1) -> None:  # Проверка строки
-    if not isinstance(value, str) or len(value.strip()) < min_len:  # Если не строка или слишком короткая
-        raise ValueError(f"{name} должно быть строкой длиной минимум {min_len} символов")  # Ошибка
-
+###################################
 def create_supplier(db: Session, name: str, contact_info: str = "",
                     details: str = "", supply_type_ids: Optional[List[int]] = None) -> Supplier:  # Создать нового поставщика
     validate_string(name, "Имя поставщика", min_len=2)  # Проверяем имя (минимум 2 символа)
@@ -381,3 +372,4 @@ def search_suppliers(db: Session, search_term: str,
         })
 
     return result  # Возвращаем список найденных поставщиков
+
