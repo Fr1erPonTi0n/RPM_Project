@@ -3,25 +3,10 @@ from sqlalchemy import func, and_, or_  # Импортируем функции:
 from datetime import datetime, date, timedelta  # Импортируем классы для работы с датами: datetime, date и timedelta
 from typing import List, Optional, Dict, Any  # Импортируем типы для аннотаций: список, опциональные значения, словари
 from models.license import Contract, License  # Импортируем ORM-модели Contract и License из модуля license
+from utils.validators import validate_positive_int, validate_string
+from utils.helpers import parse_datetime
 
-
-# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-
-def validate_positive_int(value: int, name: str) -> None:  # Функция для проверки, что число положительное целое
-    if not isinstance(value, int) or value <= 0:  # Проверяем: значение должно быть int и больше 0
-        raise ValueError(f"{name} должен быть положительным целым числом, получено: {value}")  # Если нет — ошибка
-
-
-def validate_string(value: str, name: str, min_len: int = 1) -> None:  # Функция для проверки строки
-    if not isinstance(value, str) or len(value.strip()) < min_len:  # Проверяем: значение должно быть строкой и длиной ≥ min_len
-        raise ValueError(f"{name} должно быть строкой длиной минимум {min_len} символов")  # Если нет — ошибка
-
-
-def parse_date(date_str: str) -> date:  # Функция для преобразования строки в объект date
-    try:
-        return date.fromisoformat(date_str)  # Пробуем преобразовать строку в дату (формат YYYY-MM-DD)
-    except ValueError:  # Если формат неверный
-        raise ValueError(f"Некорректный формат даты: {date_str}. Используйте YYYY-MM-DD")  # Выбрасываем ошибку
+######################### создание заказа 
 def create_contract(db: Session, supplier_id: int, title: str,
                     start_date_str: str, end_date_str: str, file_path: Optional[str] = None) -> Contract:  # Функция для создания нового контракта
     validate_positive_int(supplier_id, "ID поставщика")  # Проверяем, что ID поставщика — положительное целое число
@@ -358,3 +343,4 @@ def get_supplier_contracts_summary(db: Session, supplier_id: int) -> Dict[str, A
             for c in contracts  # Перебираем все контракты
         ]
     }
+
