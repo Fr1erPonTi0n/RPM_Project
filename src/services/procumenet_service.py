@@ -3,44 +3,11 @@ from sqlalchemy import func  # Импортируем функции для аг
 from datetime import datetime, date  # Импортируем классы для работы с датами
 from typing import List, Optional, Dict, Any  # Импортируем типы для аннотаций
 from models.procurement import OrderSupliers, OrderClients, OrderItem  # Импортируем ORM-модели для заказов
-
-
-# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ВАЛИДАЦИИ
-
-def validate_positive_int(value: int, name: str) -> None:  # Проверка положительного целого числа
-    if not isinstance(value, int) or value <= 0:  # Если значение не int или <= 0
-        raise ValueError(f"{name} должен быть положительным целым числом, получено: {value}")  # Ошибка
-
-
-def validate_string(value: str, name: str, min_len: int = 1) -> None:  # Проверка строки
-    if not isinstance(value, str) or len(value.strip()) < min_len:  # Если не строка или слишком короткая
-        raise ValueError(f"{name} должно быть строкой длиной минимум {min_len} символов")  # Ошибка
-
-
-def validate_price(value: float, name: str = "Цена") -> None:  # Проверка цены
-    if not isinstance(value, (int, float)) or value <= 0:  # Если не число или <= 0
-        raise ValueError(f"{name} должна быть положительным числом, получено: {value}")  # Ошибка
-
-
-def validate_quantity(value: int, name: str = "Количество") -> None:  # Проверка количества
-    if not isinstance(value, int) or value <= 0:  # Если не int или <= 0
-        raise ValueError(f"{name} должно быть положительным целым числом, получено: {value}")  # Ошибка
-
-
-def parse_date(date_str: str) -> date:  # Парсинг даты из строки
-    try:
-        return datetime.strptime(date_str, '%Y-%m-%d').date()  # Преобразуем строку в объект date (формат YYYY-MM-DD)
-    except ValueError:  # Если формат неверный
-        raise ValueError(f"Некорректный формат даты: {date_str}. Используйте YYYY-MM-DD")  # Ошибка
-
-
-def validate_status(value: str, valid_statuses: List[str], name: str = "Статус") -> None:  # Проверка статуса
-    if value not in valid_statuses:  # Если статус не входит в список допустимых
-        raise ValueError(f"{name} должен быть одним из: {', '.join(valid_statuses)}, получено: {value}")  # Ошибка
+from utils.validators import validate_positive_int, validate_string, validate_price, validate_quantity, validate_status
+from utils.helpers import parse_datetime
 
 
 # РАБОТА С ЗАКАЗАМИ ПОСТАВЩИКАМ
-
 def create_supplier_order(db: Session, supplier_id: int, contract_id: int,
                           delivery_date_str: Optional[str] = None) -> OrderSupliers:  # Создание заказа поставщику
     validate_positive_int(supplier_id, "ID поставщика")  # Проверяем ID поставщика
@@ -356,4 +323,5 @@ def get_top_suppliers(db: Session, limit: int = 5,
         })
 
     return top_suppliers  # Возвращаем список топ поставщиков
+
 
