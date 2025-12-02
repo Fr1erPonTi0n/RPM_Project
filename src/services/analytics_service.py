@@ -4,28 +4,9 @@ from datetime import datetime, timedelta  # Работа с датами и ин
 from typing import List, Optional, Dict, Any  # Типизация для удобства
 
 from models.analytics import SupplierKPI, Complaint  # Импортируем ORM-модели
-
-
-# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-
-def validate_positive_int(value: int, name: str) -> None:  # Проверка, что число положительное целое
-    if not isinstance(value, int) or value <= 0:  # Если значение не int или <= 0
-        raise ValueError(f"{name} должен быть положительным целым числом, получено: {value}")  # Бросаем ошибку
-
-
-def validate_status(status: str) -> None:  # Проверка допустимости статуса претензии
-    valid_statuses = {"на рассмотрении", "решён", "не решён"}  # Набор допустимых статусов
-    if status not in valid_statuses:  # Если статус не входит в допустимые
-        raise ValueError(f"Недопустимый статус. Допустимые значения: {valid_statuses}")  # Бросаем ошибку
-
-
-def validate_limit(limit: int) -> None:  # Проверка корректности лимита выборки
-    if not isinstance(limit, int) or limit <= 0:  # Если лимит не int или <= 0
-        raise ValueError(f"limit должен быть положительным целым числом, получено: {limit}")  # Бросаем ошибку
-
+from utils.validators import validate_positive_int, validate_status, validate_limit
 
 # ОЦЕНКИ ПОСТАВЩИКОВ
-
 def add_supplier_score(db: Session, supplier_id: int,
                        amount_score: float, time_score: float,
                        quality_score: float, price_score: float) -> SupplierKPI:  # Добавить оценку поставщика
@@ -187,3 +168,4 @@ def get_supplier_top(db: Session, days: int = 30, top_n: int = 10) -> List[Dict[
         'average_price': round(row.avg_price, 2),
         'times_scored': row.score_count
     } for idx, row in enumerate(results)]  # Нумеруем позиции рейтинга
+
