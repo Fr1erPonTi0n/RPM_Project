@@ -3,33 +3,10 @@ from sqlalchemy import func, and_  # Агрегатные функции и ло
 from datetime import datetime, timedelta  # Работа с датами
 from typing import List, Optional, Dict, Any  # Типизация
 from models.cinema import Film, Screening, Ticket  # ORM-модели
-
-
-# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-
-def validate_positive_int(value: int, name: str) -> None:  # Проверка положительного целого числа
-    if not isinstance(value, int) or value <= 0:  # Если не int или <= 0
-        raise ValueError(f"{name} должен быть положительным целым числом, получено: {value}")  # Ошибка
-
-
-def validate_string(value: str, name: str, min_len: int = 1) -> None:  # Проверка строки
-    if not isinstance(value, str) or len(value.strip()) < min_len:  # Если не строка или слишком короткая
-        raise ValueError(f"{name} должно быть строкой длиной минимум {min_len} символов")  # Ошибка
-
-
-def validate_price(value: float, name: str = "Цена") -> None:  # Проверка цены
-    if not isinstance(value, (int, float)) or value <= 0:  # Если не число или <= 0
-        raise ValueError(f"{name} должна быть положительным числом, получено: {value}")  # Ошибка
-
-
-def parse_datetime(datetime_str: str) -> datetime:  # Парсинг даты в формате ISO
-    try:
-        return datetime.fromisoformat(datetime_str.replace('Z', '+00:00'))  # Преобразуем строку в datetime
-    except ValueError:
-        raise ValueError(f"Некорректный формат даты: {datetime_str}. Используйте ISO (YYYY-MM-DDTHH:MM:SS)")  # Ошибка
+from utils.validators import validate_positive_int, validate_string, validate_price
+from utils.helpers import parse_datetime
 
 # РАБОТА С ФИЛЬМАМИ
-
 def create_film(db: Session, license_id: int, title: str, duration: int, description: str = "") -> Film:  # Создать фильм
     validate_positive_int(license_id, "ID лицензии")  # Проверка ID лицензии
     validate_string(title, "Название фильма")  # Проверка названия
