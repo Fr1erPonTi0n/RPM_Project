@@ -2,9 +2,15 @@ from sqlalchemy.orm import Session  # Работа с сессией SQLAlchemy
 from sqlalchemy import func, and_  # Агрегатные функции и логические операторы
 from datetime import datetime, timedelta  # Работа с датами
 from typing import List, Optional, Dict, Any  # Типизация
+import sys
+import os
+
+# Добавляем путь для импорта модулей
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from models.cinema import Film, Screening, Ticket  # ORM-модели
 from utils.validators import validate_positive_int, validate_string, validate_price
-from utils.helpers import parse_datetime
+from utils.helper import parse_date
 
 # РАБОТА С ФИЛЬМАМИ
 def create_film(db: Session, license_id: int, title: str, duration: int, description: str = "") -> Film:  # Создать фильм
@@ -85,7 +91,7 @@ def delete_film(db: Session, film_id: int) -> bool:  # Удалить фильм
 
 def create_screening(db: Session, film_id: int, datetime_str: str, hall: str, ticket_price: float) -> Screening:  # Создать показ
     validate_positive_int(film_id, "ID фильма")  # Проверка ID фильма
-    screening_datetime = parse_datetime(datetime_str)  # Парсим дату
+    screening_datetime = parse_date(datetime_str)  # Парсим дату
     if screening_datetime < datetime.now():  # Проверка на прошлое
         raise ValueError("Дата и время показа не могут быть в прошлом")  # Ошибка
     validate_string(hall, "Название зала")  # Проверка названия зала
@@ -120,9 +126,9 @@ def get_all_screenings(db: Session, film_id: Optional[int] = None,
         validate_positive_int(film_id, "ID фильма")
         query = query.filter(Screening.film_id == film_id)
     if start_date:  # Фильтр по начальной дате
-        query = query.filter(Screening.datetime >= parse_datetime(start_date))
+        query = query.filter(Screening.datetime >= parse_date(start_date))
     if end_date:  # Фильтр по конечной дате
-        query = query.filter(Screening.datetime <= parse_datetime(end_date))
+        query = query.filter(Screening.datetime <= parse_date(end_date))
     return query.order_by(Screening.datetime).all()  # Сортировка и возврат
 
 
@@ -155,7 +161,7 @@ def update_screening(db: Session, screening_id: int, datetime_str: Optional[str]
         raise ValueError("Невозможно изменить информацию о прошедшем показе")  # Ошибка
 
     if datetime_str is not None:  # Обновление даты
-        new_datetime = parse_datetime(datetime_str)
+        new_datetime = parse_date(datetime_str)
         if new_datetime < datetime.now():
             raise ValueError("Новая дата и время показа не могут быть в прошлом")
         screening.datetime = new_datetime
@@ -297,7 +303,7 @@ def delete_ticket(db: Session, ticket_id: int) -> bool:  # Удалить бил
 # АНАЛИТИКА КИНОТЕАТРА
 
 def get_daily_revenue(db: Session, date_str: str) -> Dict[str, Any]:  # Получить выручку за день
-    target_date = parse_datetime(date_str).date()  # Парсим дату
+    target_date = parse_date(date_str).date()  # Парсим дату
     start_datetime = datetime.combine(target_date, datetime.min.time())  # Начало дня
     end_datetime = datetime.combine(target_date, datetime.max.time())  # Конец дня
 

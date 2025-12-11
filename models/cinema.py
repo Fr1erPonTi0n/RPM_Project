@@ -1,9 +1,15 @@
 # ORM МОДЕЛЬ ДЛЯ: 
 # - УПРАВЛЕНИЕ КИНОТЕАТРОМ
 
-from database import Base
 from sqlalchemy import Column, Integer, DateTime, Float, ForeignKey, Boolean, Text
 from sqlalchemy.orm import relationship
+import sys
+import os
+
+# Добавляем путь для импорта модулей
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from database import Base
 
 class Film(Base):
     # ТАБЛИЦА ФИЛЬМОВ
@@ -49,7 +55,7 @@ class Ticket(Base):
     sold_date = Column(DateTime) # ДАТА ПРОДАЖИ БИЛЕТА
     
     # СВЯЗИ ДЛЯ СОЗДАНИЕ ТАБЛИЦЫ
-    screenings = relationship("Screening", back_populates="ticket") # СВЯЗЬ С ТАБЛИЦЕЙ ПОКАЗОВ
+    screening = relationship("Screening", back_populates="ticket") # СВЯЗЬ С ТАБЛИЦЕЙ ПОКАЗОВ
     complaint = relationship("Complaint", back_populates="ticket") # СВЯЗЬ С ТАБЛИЦЕЙ ЖАЛОБ
     order = relationship("OrderClients", back_populates='ticket') # СВЯЗЬ С ПОКУПКАМИ
     
