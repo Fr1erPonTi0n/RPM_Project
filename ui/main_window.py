@@ -8,9 +8,9 @@ import os
 # Добавляем путь для импорта модулей
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ui.content_window import ContentWindow
-from ui.finance_window import FinanceWindow
-from ui.procurement_window import ProcurementWindow
+from ui.content_window import ContentMainWindow
+from ui.finance_window import FinanceMainWindow
+from ui.procurement_window import ProcurementMainWindow
 from ui.notification_dialog import NotificationDialog
 
 class MainWindow(QMainWindow):
@@ -63,16 +63,16 @@ class MainWindow(QMainWindow):
     
     def open_content_window(self):
         """Открытие окна просмотра студентов"""
-        self.content_window = ContentWindow()
+        self.content_window = ContentMainWindow()
         self.content_window.show()
     
     def open_finance_window(self):
         """Открытие окна добавления студента"""
-        self.finance_window = FinanceWindow()
+        self.finance_window = FinanceMainWindow()
         self.finance_window.show()
 
     def open_procurement_window(self):
-        self.procurement_window = ProcurementWindow()
+        self.procurement_window = ProcurementMainWindow()
         self.procurement_window.show()
 
     def open_notification_dialog(self):
