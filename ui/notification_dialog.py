@@ -25,28 +25,27 @@ class NotificationDialog(QDialog):
         
         layout = QVBoxLayout()
         
-        # Заголовок
         title_label = QLabel("Уведомления системы")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title_label.setStyleSheet("font-size: 16px; font-weight: bold; margin: 10px;")
         layout.addWidget(title_label)
         
-        # Список уведомлений
         self.notifications_list = QListWidget()
         layout.addWidget(self.notifications_list)
         
-        # Кнопки управления
-        button_layout = QVBoxLayout()
-        
+        button_style = """
+            QPushButton {
+                font-size: 14px;
+                padding: 8px;
+                margin: 5px;
+            }
+        """
+
         self.refresh_button = QPushButton("Обновить")
         self.refresh_button.clicked.connect(self.load_notifications)
-        button_layout.addWidget(self.refresh_button)
+        self.refresh_button.setStyleSheet(button_style)
         
-        self.close_button = QPushButton("Закрыть")
-        self.close_button.clicked.connect(self.close)
-        button_layout.addWidget(self.close_button)
-        
-        layout.addLayout(button_layout)
+        layout.addWidget(self.refresh_button)
         
         self.setLayout(layout)
         
@@ -103,9 +102,3 @@ class NotificationDialog(QDialog):
         except Exception as e:
             error_item = QListWidgetItem(f"Ошибка загрузки уведомлений: {str(e)}")
             self.notifications_list.addItem(error_item)
-    
-    def closeEvent(self, event):
-        """Обработка закрытия окна"""
-        if hasattr(self, 'db'):
-            self.db.close()
-        super().closeEvent(event)
