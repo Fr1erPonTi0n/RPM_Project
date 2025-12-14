@@ -35,7 +35,7 @@ class MainWindow(QMainWindow):
         self.content_button = QPushButton("Работа с контентом")
         self.finance_button = QPushButton("Работа с аналитикой")
         self.procurement_button = QPushButton("Работа с закупками / лицензиями")
-        self.notification_button = QPushButton("Увемедомления")
+        self.notification_button = QPushButton("Уведомления")
 
         button_style = """
             QPushButton {

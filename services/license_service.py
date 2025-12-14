@@ -34,8 +34,8 @@ def create_contract(db: Session, supplier_id: int, title: str,
         file_path=file_path.strip() if file_path else None  # Путь к файлу (если указан)
     )
 
-    with db.begin():  # Открываем транзакцию базы данных
-        db.add(new_contract)  # Добавляем контракт в сессию
+    db.add(new_contract)
+    db.commit()  # Добавляем контракт в сессию
     db.refresh(new_contract)  # Обновляем объект, чтобы получить актуальные данные из базы
     return new_contract  # Возвращаем созданный контракт
 
@@ -79,8 +79,8 @@ def update_contract(db: Session, contract_id: int, title: Optional[str] = None,
     if file_path is not None:  # Если нужно обновить путь к файлу
         contract.file_path = file_path.strip() if file_path else None  # Обновляем путь
 
-    with db.begin():  # Транзакция
-        db.add(contract)  # Сохраняем изменения
+    db.add(contract)
+    db.commit()
     db.refresh(contract)  # Обновляем объект
     return contract  # Возвращаем обновлённый контракт
 
@@ -142,8 +142,8 @@ def create_license(db: Session, supplier_id: int, contract_id: int, film_title: 
         end_date=end_date  # Дата окончания
     )
 
-    with db.begin():  # Транзакция
-        db.add(new_license)  # Добавляем лицензию в базу
+    db.add(new_license)
+    db.commit() # Добавляем лицензию в базу
     db.refresh(new_license)  # Обновляем объект
     return new_license  # Возвращаем созданную лицензию
 
@@ -215,8 +215,8 @@ def delete_license(db: Session, license_id: int) -> bool:  # Удалить ли
     if film_exists:  # Если фильм найден
         raise ValueError(f"Невозможно удалить лицензию: есть связанный фильм (ID: {film_exists.id})")  # Ошибка
 
-    with db.begin():  # Транзакция
-        db.delete(license_obj)  # Удаляем лицензию
+    db.delete(license_obj)
+    db.commit()
     return True  # Возвращаем True (успех)
 
 # АНАЛИТИКА КОНТРАКТОВ И ЛИЦЕНЗИЙ
@@ -350,3 +350,39 @@ def get_supplier_contracts_summary(db: Session, supplier_id: int) -> Dict[str, A
         ]
     }
 
+def delete_contract(db: Session, contract_id: int) -> bool:
+    """Удалить контракт"""
+    validate_positive_int(contract_id, "ID контракта")
+    contract = db.query(Contract).filter(Contract.id == contract_id).first()
+    if not contract:
+        return False
+
+    # Проверяем, есть ли связанные лицензии
+    license_count = db.query(License).filter(License.contract_id == contract_id).count()
+    if license_count > 0:
+        # Можно предложить удалить лицензии или показать ошибку
+        # Пока просто запрещаем удаление
+        raise ValueError(f"Невозможно удалить контракт: есть {license_count} связанных лицензий")
+
+    # ИСПРАВЛЕНИЕ: убираем with db.begin()
+    db.delete(contract)
+    db.commit()
+    return True
+
+def delete_license(db: Session, license_id: int) -> bool:
+    """Удалить лицензию"""
+    validate_positive_int(license_id, "ID лицензии")
+    license_obj = db.query(License).filter(License.id == license_id).first()
+    if not license_obj:
+        return False
+
+    # Проверяем, есть ли связанный фильм
+    from models.cinema import Film
+    film_exists = db.query(Film).filter(Film.license_id == license_id).first()
+    if film_exists:
+        raise ValueError(f"Невозможно удалить лицензию: есть связанный фильм (ID: {film_exists.id})")
+
+    # ИСПРАВЛЕНИЕ: убираем with db.begin()
+    db.delete(license_obj)
+    db.commit()
+    return True

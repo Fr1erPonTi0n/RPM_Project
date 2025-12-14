@@ -31,8 +31,8 @@ def add_supplier_score(db: Session, supplier_id: int,
         overall_rating=total_score
     )
 
-    with db.begin():  # Начинаем транзакцию
-        db.add(new_score)  # Добавляем запись в сессию
+    db.add(new_score)
+    db.commit()  # Добавляем запись в сессию
     db.refresh(new_score)  # Обновляем объект из базы
     return new_score  # Возвращаем созданную запись
 
@@ -51,8 +51,8 @@ def remove_score(db: Session, score_id: int) -> bool:  # Удалить оцен
     score = db.query(SupplierKPI).filter_by(id=score_id).first()  # Ищем запись по ID
     if not score:  # Если запись не найдена
         return False  # Возвращаем False (ничего не удалено)
-    with db.begin():  # Начинаем транзакцию
-        db.delete(score)  # Удаляем найденную запись
+    db.delete(score)
+    db.commit()
     return True  # Возвращаем успех
 
 
@@ -78,8 +78,8 @@ def create_complaint(db: Session, description: str,
         status="на рассмотрении"
     )
 
-    with db.begin():  # Начинаем транзакцию
-        db.add(new_complaint)  # Добавляем претензию
+    db.add(new_complaint)
+    db.commit()
     db.refresh(new_complaint)  # Обновляем объект из базы
     return new_complaint  # Возвращаем созданную запись
 
@@ -102,8 +102,8 @@ def update_complaint_status(db: Session, complaint_id: int, new_status: str) -> 
         return None  # Возвращаем None (ничего не обновлено)
 
     complaint.status = new_status  # Присваиваем новый статус
-    with db.begin():  # Начинаем транзакцию
-        db.add(complaint)  # Фиксируем изменение
+    db.add(complaint)
+    db.commit()
     db.refresh(complaint)  # Обновляем объект из базы
     return complaint  # Возвращаем обновлённую запись
 
@@ -113,8 +113,8 @@ def delete_complaint(db: Session, complaint_id: int) -> bool:  # Удалить 
     complaint = db.query(Complaint).filter_by(id=complaint_id).first()  # Ищем запись по ID
     if not complaint:  # Если запись не найдена
         return False  # Возвращаем False (ничего не удалено)
-    with db.begin():  # Начинаем транзакцию
-        db.delete(complaint)  # Удаляем найденную запись
+    db.delete(complaint)
+    db.commit()
     return True  # Возвращаем успех
 
 

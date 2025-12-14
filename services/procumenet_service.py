@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session  # Импортируем класс Session из SQLAlchemy — нужен для работы с базой данных
 from sqlalchemy import func  # Импортируем функции для агрегации (например, count, sum)
-from datetime import datetime, date  # Импортируем классы для работы с датами
+from datetime import datetime, date, timedelta  # Импортируем классы для работы с датами
 from typing import List, Optional, Dict, Any  # Импортируем типы для аннотаций
 import sys
 import os
@@ -33,8 +33,8 @@ def create_supplier_order(db: Session, supplier_id: int, contract_id: int,
         total_amount=0.0  # Начальная сумма заказа
     )
 
-    with db.begin():  # Открываем транзакцию
-        db.add(new_order)  # Добавляем заказ в базу
+    db.add(new_order)
+    db.commit()
     db.refresh(new_order)  # Обновляем объект из базы
     return new_order  # Возвращаем созданный заказ
 
@@ -73,8 +73,8 @@ def update_supplier_order_status(db: Session, order_id: int,
     if new_status == "доставлен":  # Если заказ доставлен
         order.delivery_date = date.today()  # Устанавливаем сегодняшнюю дату как дату доставки
 
-    with db.begin():  # Транзакция
-        db.add(order)  # Сохраняем изменения
+    db.add(order)
+    db.commit()
     db.refresh(order)  # Обновляем объект
     return order  # Возвращаем обновлённый заказ
 
@@ -103,10 +103,10 @@ def add_item_to_supplier_order(db: Session, order_id: int,
         total_price=round(total_price, 2)  # Общая стоимость
     )
 
-    with db.begin():  # Транзакция
-        db.add(new_item)  # Добавляем товар
-        order.total_amount = round(order.total_amount + total_price, 2)  # Обновляем сумму заказа
-        db.add(order)  # Сохраняем изменения в заказе
+    db.add(new_item)
+    order.total_amount = round(order.total_amount + total_price, 2)
+    db.add(order)
+    db.commit()
 
     db.refresh(new_item)  # Обновляем объект товара
     return new_item  # Возвращаем добавленный товар
@@ -126,9 +126,9 @@ def delete_supplier_order(db: Session, order_id: int) -> bool:  # Удалить
     if order.status == "доставлен":  # Если заказ уже доставлен
         raise ValueError("Нельзя удалить доставленный заказ")  # Ошибка
 
-    with db.begin():  # Транзакция
-        db.query(OrderItem).filter(OrderItem.order_id == order_id).delete()  # Удаляем все товары заказа
-        db.delete(order)  # Удаляем сам заказ
+    db.query(OrderItem).filter(OrderItem.order_id == order_id).delete()
+    db.delete(order)
+    db.commit()
 
     return True
 
@@ -150,8 +150,8 @@ def create_client_order(db: Session, client_name: str, phone: str,
         status="оформлен"  # Статус заказа по умолчанию
     )
 
-    with db.begin():  # Транзакция
-        db.add(new_order)  # Добавляем заказ в базу
+    db.add(new_order)
+    db.commit()
     db.refresh(new_order)  # Обновляем объект
     return new_order  # Возвращаем созданный заказ
 
@@ -209,8 +209,8 @@ def update_client_order_amount(db: Session, order_id: int,
 
     order.total_amount = round(new_amount, 2)  # Обновляем сумму заказа (округляем до 2 знаков)
 
-    with db.begin():  # Транзакция
-        db.add(order)  # Сохраняем изменения
+    db.add(order)
+    db.commit()
     db.refresh(order)  # Обновляем объект
     return order  # Возвращаем обновлённый заказ
 
@@ -221,8 +221,8 @@ def delete_client_order(db: Session, order_id: int) -> bool:  # Удалить �
     if not order:  # Если заказ не найден
         return False  # Возвращаем False
 
-    with db.begin():  # Транзакция
-        db.delete(order)  # Удаляем заказ
+    db.delete(order)
+    db.commit()
 
     return True
 

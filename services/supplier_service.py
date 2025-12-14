@@ -28,10 +28,9 @@ def create_supplier(db: Session, name: str, contact_info: str = "",
         details=details.strip() if details else None  # Дополнительные реквизиты
     )
 
-    with db.begin():  # Транзакция
-        db.add(new_supplier)  # Добавляем поставщика в базу
-
-    db.refresh(new_supplier)  # Обновляем объект (чтобы получить ID)
+    db.add(new_supplier)
+    db.commit()
+    db.refresh(new_supplier)
 
     if supply_type_ids:  # Если указаны типы поставок
         for type_id in supply_type_ids:  # Перебираем список ID
@@ -40,12 +39,12 @@ def create_supplier(db: Session, name: str, contact_info: str = "",
             if not supply_type:  # Если тип не найден
                 raise ValueError(f"Тип поставки с ID {type_id} не найден")  # Ошибка
 
-        with db.begin():  # Транзакция для добавления связей
-            for type_id in supply_type_ids:  # Перебираем ID типов
-                db.execute(supplier_supply_type.insert().values(  # Добавляем запись в таблицу связей
-                    supplier_id=new_supplier.id,
-                    supply_type_id=type_id
-                ))
+        for type_id in supply_type_ids:
+            db.execute(supplier_supply_type.insert().values(
+                supplier_id=new_supplier.id,
+                supply_type_id=type_id
+            ))
+        db.commit()
 
     db.refresh(new_supplier)  # Обновляем объект с новыми связями
     return new_supplier  # Возвращаем созданного поставщика
@@ -96,9 +95,8 @@ def update_supplier(db: Session, supplier_id: int, name: Optional[str] = None,
     if details is not None:  # Если нужно обновить реквизиты
         supplier.details = details.strip() if details else None  # Обновляем
 
-    with db.begin():  # Транзакция
-        db.add(supplier)  # Сохраняем изменения
-
+    db.add(supplier)
+    db.commit()
     db.refresh(supplier)  # Обновляем объект
     return supplier  # Возвращаем обновлённого поставщика
 
@@ -127,13 +125,13 @@ def add_supply_type_to_supplier(db: Session, supplier_id: int,
     if existing:  # Если связь уже существует
         return False  # Возвращаем False (ничего не добавили)
 
-    with db.begin():  # Транзакция
-        db.execute(  # Добавляем связь в таблицу
-            supplier_supply_type.insert().values(
-                supplier_id=supplier_id,
-                supply_type_id=supply_type_id
-            )
+    db.execute(
+        supplier_supply_type.insert().values(
+            supplier_id=supplier_id,
+            supply_type_id=supply_type_id
         )
+    )
+    db.commit()
 
     return True  # Возвращаем True (успешно добавили)
 
@@ -155,15 +153,15 @@ def remove_supply_type_from_supplier(db: Session, supplier_id: int,
     if not existing:  # Если связи нет
         return False  # Возвращаем False (ничего не удалили)
 
-    with db.begin():  # Транзакция
-        db.execute(  # Удаляем связь
-            supplier_supply_type.delete().where(
-                and_(
-                    supplier_supply_type.c.supplier_id == supplier_id,
-                    supplier_supply_type.c.supply_type_id == supply_type_id
-                )
+    db.execute(
+        supplier_supply_type.delete().where(
+            and_(
+                supplier_supply_type.c.supplier_id == supplier_id,
+                supplier_supply_type.c.supply_type_id == supply_type_id
             )
         )
+    )
+    db.commit()
 
     return True  # Возвращаем True (успешно удалили)
 
@@ -191,13 +189,13 @@ def delete_supplier(db: Session, supplier_id: int) -> bool:  # Удалить п
     if order_count > 0:  # Если есть заказы
         raise ValueError(f"Невозможно удалить поставщика: есть {order_count} связанных заказов")  # Ошибка
 
-    with db.begin():  # Транзакция
-        db.execute(  # Удаляем все связи с типами поставок
-            supplier_supply_type.delete().where(
-                supplier_supply_type.c.supplier_id == supplier_id
-            )
+    db.execute(
+        supplier_supply_type.delete().where(
+            supplier_supply_type.c.supplier_id == supplier_id
         )
-        db.delete(supplier)  # Удаляем самого поставщика
+    )
+    db.delete(supplier)
+    db.commit()
 
     return True  # Возвращаем True (успешно удалили)
 
@@ -216,9 +214,8 @@ def create_supply_type(db: Session, name: str, description: str = "") -> SupplyT
         description=description.strip() if description else None  # Описание (если указано)
     )
 
-    with db.begin():  # Транзакция
-        db.add(new_type)  # Добавляем тип в базу
-
+    db.add(new_type)
+    db.commit()
     db.refresh(new_type)  # Обновляем объект (чтобы получить ID)
     return new_type  # Возвращаем созданный тип
 
@@ -253,9 +250,8 @@ def update_supply_type(db: Session, type_id: int, name: Optional[str] = None,
     if description is not None:  # Если нужно обновить описание
         supply_type.description = description.strip() if description else None  # Обновляем описание
 
-    with db.begin():  # Транзакция
-        db.add(supply_type)  # Сохраняем изменения
-
+    db.add(supply_type)
+    db.commit()
     db.refresh(supply_type)  # Обновляем объект
     return supply_type  # Возвращаем обновлённый тип
 
@@ -276,9 +272,8 @@ def delete_supply_type(db: Session, type_id: int) -> bool:  # Удалить т�
     if len(supplier_count) > 0:  # Если есть связанные поставщики
         raise ValueError(f"Невозможно удалить тип поставки: есть {len(supplier_count)} связанных поставщиков")  # Ошибка
 
-    with db.begin():  # Транзакция
-        db.delete(supply_type)  # Удаляем тип поставки
-
+    db.delete(supply_type)
+    db.commit()
     return True  # Возвращаем True (успешно удалили)
 
 # АНАЛИТИКА ПОСТАВЩИКОВ

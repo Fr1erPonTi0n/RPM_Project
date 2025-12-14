@@ -27,8 +27,8 @@ def create_film(db: Session, license_id: int, title: str, duration: int, descrip
     new_film = Film(license_id=license_id, title=title.strip(), duration=duration,
                     description=description.strip() if description else "")  # Создаём объект фильма
 
-    with db.begin():  # Транзакция
-        db.add(new_film)  # Добавляем фильм
+    db.add(new_film)
+    db.commit()  # Добавляем фильм
     db.refresh(new_film)  # Обновляем объект
     return new_film  # Возвращаем результат
 
@@ -66,8 +66,8 @@ def update_film(db: Session, film_id: int, title: Optional[str] = None,
     if description is not None:  # Если нужно обновить описание
         film.description = description.strip() if description else ""  # Обновляем
 
-    with db.begin():  # Транзакция
-        db.add(film)  # Сохраняем изменения
+    db.add(film)
+    db.commit()
     db.refresh(film)  # Обновляем объект
     return film  # Возвращаем результат
 
@@ -83,8 +83,8 @@ def delete_film(db: Session, film_id: int) -> bool:  # Удалить фильм
     if future_screenings > 0:  # Если есть будущие показы
         raise ValueError(f"Невозможно удалить фильм: есть {future_screenings} запланированных показов")  # Ошибка
 
-    with db.begin():  # Транзакция
-        db.delete(film)  # Удаляем фильм
+    db.delete(film)
+    db.commit()
     return True
 
 # РАБОТА С ПОКАЗАМИ
@@ -113,8 +113,8 @@ def create_screening(db: Session, film_id: int, datetime_str: str, hall: str, ti
     new_screening = Screening(film_id=film_id, datetime=screening_datetime,
                               hall=hall.strip(), ticket_price=round(float(ticket_price), 2))  # Создаём показ
 
-    with db.begin():  # Транзакция
-        db.add(new_screening)  # Добавляем показ
+    db.add(new_screening)
+    db.commit()  # Добавляем показ
     db.refresh(new_screening)  # Обновляем объект
     return new_screening  # Возвращаем результат
 
@@ -174,8 +174,8 @@ def update_screening(db: Session, screening_id: int, datetime_str: Optional[str]
         validate_price(ticket_price, "Цена билета")
         screening.ticket_price = round(float(ticket_price), 2)
 
-    with db.begin():  # Транзакция
-        db.add(screening)  # Сохраняем изменения
+    db.add(screening)
+    db.commit()
     db.refresh(screening)  # Обновляем объект
     return screening  # Возвращаем результат
 
@@ -192,8 +192,8 @@ def delete_screening(db: Session, screening_id: int) -> bool:  # Удалить 
     if sold_tickets > 0:  # Если есть проданные билеты
         raise ValueError(f"Невозможно удалить показ: продано {sold_tickets} билетов")  # Ошибка
 
-    with db.begin():  # Транзакция
-        db.delete(screening)  # Удаляем показ
+    db.delete(screening)
+    db.commit()
     return True
 
 # РАБОТА С БИЛЕТАМИ
@@ -220,8 +220,8 @@ def create_ticket(db: Session, screening_id: int, seat_number: str, price: float
     new_ticket = Ticket(screening_id=screening_id, seat_number=seat_number.strip(),
                         price=round(float(price), 2), sold=False, sold_date=None)  # Создаём билет
 
-    with db.begin():
-        db.add(new_ticket)
+    db.add(new_ticket)
+    db.commit()
     db.refresh(new_ticket)
     return new_ticket
 
@@ -260,8 +260,8 @@ def sell_ticket(db: Session, ticket_id: int, order_id: Optional[int] = None) -> 
     if order_id:
         ticket.order_id = order_id  # Привязываем заказ
 
-    with db.begin():
-        db.add(ticket)
+    db.add(ticket)
+    db.commit()
     db.refresh(ticket)
     return ticket
 
@@ -282,8 +282,8 @@ def cancel_ticket_sale(db: Session, ticket_id: int) -> Optional[Ticket]:  # От
     ticket.sold_date = None
     ticket.order_id = None
 
-    with db.begin():
-        db.add(ticket)
+    db.add(ticket)
+    db.commit()
     db.refresh(ticket)
     return ticket
 
@@ -296,14 +296,14 @@ def delete_ticket(db: Session, ticket_id: int) -> bool:  # Удалить бил
     if ticket.sold:  # Если билет продан
         raise ValueError(f"Невозможно удалить проданный билет (ID: {ticket_id})")  # Ошибка
 
-    with db.begin():
-        db.delete(ticket)
+    db.delete(ticket)
+    db.commit()
     return True
 
 # АНАЛИТИКА КИНОТЕАТРА
 
 def get_daily_revenue(db: Session, date_str: str) -> Dict[str, Any]:  # Получить выручку за день
-    target_date = parse_date(date_str).date()  # Парсим дату
+    target_date = parse_date(date_str)  # Парсим дату
     start_datetime = datetime.combine(target_date, datetime.min.time())  # Начало дня
     end_datetime = datetime.combine(target_date, datetime.max.time())  # Конец дня
 
@@ -377,3 +377,27 @@ def get_popular_films(db: Session, limit: int = 5, days: int = 30) -> List[Dict[
         })
     return popular_films
 
+
+def get_screenings_for_date(db: Session, date_str: str) -> List[Dict[str, Any]]:
+    """Получить все показы на определенную дату"""
+    target_date = parse_date(date_str)
+    start_datetime = datetime.combine(target_date, datetime.min.time())
+    end_datetime = datetime.combine(target_date, datetime.max.time())
+
+    screenings = db.query(Screening).filter(
+        Screening.datetime >= start_datetime,
+        Screening.datetime <= end_datetime
+    ).order_by(Screening.datetime).all()
+
+    result = []
+    for screening in screenings:
+        film = db.query(Film).filter(Film.id == screening.film_id).first()
+        result.append({
+            'id': screening.id,
+            'film_title': film.title if film else f"Фильм ID:{screening.film_id}",
+            'datetime': screening.datetime,
+            'hall': screening.hall,
+            'ticket_price': screening.ticket_price
+        })
+
+    return result
